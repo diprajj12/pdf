@@ -186,22 +186,77 @@ class PdfViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun splitAllPages(file: File) {
+    fun splitAllPages(file: File, baseName: String = "Page") {
         viewModelScope.launch {
             _isProcessing.value = true
             _processingMessage.value = "Splitting into individual pages..."
-            val result = PdfProcessor.splitAllPages(getApplication(), file)
+            val result = PdfProcessor.splitAllPages(getApplication(), file, baseName)
             _isProcessing.value = false
             _lastResult.value = result
 
             if (result.success && result.outputFile != null) {
                 repository.insert(
                     PdfRecord(
-                        fileName = "${result.outputFiles.size} Pages Separated",
+                        fileName = "${result.outputFiles.size} Individual Pages",
                         filePath = result.outputFile.absolutePath,
                         fileSize = result.newSize,
                         pageCount = result.outputFiles.size,
                         operationType = "Split All",
+                        originalSize = result.originalSize
+                    )
+                )
+            } else {
+                _errorMessage.value = result.message
+            }
+        }
+    }
+
+    fun splitPdfByChunk(file: File, chunkSize: Int, baseName: String = "Part") {
+        viewModelScope.launch {
+            _isProcessing.value = true
+            _processingMessage.value = "Splitting into files of $chunkSize pages..."
+            val result = PdfProcessor.splitPdfByChunkSize(getApplication(), file, chunkSize, baseName)
+            _isProcessing.value = false
+            _lastResult.value = result
+
+            if (result.success && result.outputFile != null) {
+                repository.insert(
+                    PdfRecord(
+                        fileName = "${result.outputFiles.size} Smaller PDF Files",
+                        filePath = result.outputFile.absolutePath,
+                        fileSize = result.newSize,
+                        pageCount = result.outputFiles.size,
+                        operationType = "Split Chunk",
+                        originalSize = result.originalSize
+                    )
+                )
+            } else {
+                _errorMessage.value = result.message
+            }
+        }
+    }
+
+    fun splitPdfByRanges(file: File, ranges: List<List<Int>>, baseName: String = "Part") {
+        if (ranges.isEmpty()) {
+            _errorMessage.value = "No valid page ranges defined."
+            return
+        }
+
+        viewModelScope.launch {
+            _isProcessing.value = true
+            _processingMessage.value = "Splitting into ${ranges.size} range files..."
+            val result = PdfProcessor.splitPdfByCustomRanges(getApplication(), file, ranges, baseName)
+            _isProcessing.value = false
+            _lastResult.value = result
+
+            if (result.success && result.outputFile != null) {
+                repository.insert(
+                    PdfRecord(
+                        fileName = "${result.outputFiles.size} Custom Range Files",
+                        filePath = result.outputFile.absolutePath,
+                        fileSize = result.newSize,
+                        pageCount = result.outputFiles.size,
+                        operationType = "Split Ranges",
                         originalSize = result.originalSize
                     )
                 )

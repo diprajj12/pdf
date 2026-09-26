@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,6 +34,7 @@ import com.example.pdf.ToolCategory
 import com.example.pdf.ToolType
 import com.example.ui.PdfViewModel
 import com.example.ui.components.ToolCard
+import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,8 +45,21 @@ fun HomeScreen(
     onOpenViewer: (File) -> Unit,
     onViewAllHistory: () -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var selectedCategory by remember { mutableStateOf(ToolCategory.ALL) }
     val recentRecords by viewModel.allRecords.collectAsState()
+
+    val openPdfPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        uri?.let {
+            coroutineScope.launch {
+                val temp = PdfProcessor.copyUriToTempFile(context, it, "view_")
+                onOpenViewer(temp)
+            }
+        }
+    }
 
     val filteredTools = remember(selectedCategory) {
         if (selectedCategory == ToolCategory.ALL) {
@@ -86,6 +104,16 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { openPdfPicker.launch(arrayOf("application/pdf")) },
+                        modifier = Modifier.testTag("btn_open_pdf_top")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PictureAsPdf,
+                            contentDescription = "Open PDF",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(
                         onClick = onViewAllHistory,
                         modifier = Modifier.testTag("btn_history_header")
@@ -179,45 +207,39 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
-                                    onClick = {
-                                        viewModel.createSampleDocument { sampleFile ->
-                                            onOpenViewer(sampleFile)
-                                        }
-                                    },
+                                    onClick = { onToolSelected(ToolType.IMAGE_TO_PDF) },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color.White,
                                         contentColor = Color(0xFFE5322D)
                                     ),
                                     shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.weight(1f).testTag("btn_create_demo_pdf")
+                                    modifier = Modifier.weight(1f).testTag("btn_jpg_to_pdf_hero")
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.AddCircleOutline,
+                                        imageVector = Icons.Default.Image,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Demo PDF", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("JPG to PDF", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
 
                                 FilledTonalButton(
-                                    onClick = {
-                                        onToolSelected(ToolType.COMPRESS_IMAGE)
-                                    },
+                                    onClick = { onToolSelected(ToolType.MERGE) },
                                     colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = Color.White.copy(alpha = 0.2f),
+                                        containerColor = Color.White.copy(alpha = 0.25f),
                                         contentColor = Color.White
                                     ),
                                     shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.weight(1f).testTag("btn_quick_compress_jpg")
+                                    modifier = Modifier.weight(1f).testTag("btn_merge_pdf_hero")
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Compress,
+                                        imageVector = Icons.Default.CallMerge,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Compress JPG", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("Merge PDF", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 }
                             }
                         }

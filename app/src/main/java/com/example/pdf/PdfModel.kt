@@ -209,7 +209,8 @@ data class ProcessResult(
 
 enum class PageOrientation(val title: String) {
     PORTRAIT("Portrait"),
-    LANDSCAPE("Landscape")
+    LANDSCAPE("Landscape"),
+    AUTO("Auto (Match Image)")
 }
 
 enum class ImageFitMode(val title: String) {

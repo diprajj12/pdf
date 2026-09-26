@@ -24,7 +24,10 @@ import com.example.ui.components.ProcessingDialog
 import com.example.ui.components.ResultDialog
 import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.HomeScreen
+import com.example.ui.screens.JpgToPdfScreen
+import com.example.ui.screens.MergePdfScreen
 import com.example.ui.screens.PdfViewerScreen
+import com.example.ui.screens.SplitPdfScreen
 import com.example.ui.screens.ToolDetailScreen
 import com.example.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.launch
@@ -95,11 +98,8 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            composable("tool/{toolId}") { backStackEntry ->
-                                val toolId = backStackEntry.arguments?.getString("toolId")
-                                val tool = ToolType.entries.find { it.id == toolId } ?: ToolType.MERGE
-                                ToolDetailScreen(
-                                    tool = tool,
+                            composable("merge") {
+                                MergePdfScreen(
                                     viewModel = viewModel,
                                     onBack = { navController.popBackStack() },
                                     onOpenViewer = { file ->
@@ -107,6 +107,60 @@ class MainActivity : ComponentActivity() {
                                         navController.navigate("viewer")
                                     }
                                 )
+                            }
+
+                            composable("jpg_to_pdf") {
+                                JpgToPdfScreen(
+                                    viewModel = viewModel,
+                                    onBack = { navController.popBackStack() },
+                                    onOpenViewer = { file ->
+                                        viewModel.setActiveViewingFile(file)
+                                        navController.navigate("viewer")
+                                    }
+                                )
+                            }
+
+                            composable("tool/{toolId}") { backStackEntry ->
+                                val toolId = backStackEntry.arguments?.getString("toolId")
+                                if (toolId == ToolType.MERGE.id) {
+                                    MergePdfScreen(
+                                        viewModel = viewModel,
+                                        onBack = { navController.popBackStack() },
+                                        onOpenViewer = { file ->
+                                            viewModel.setActiveViewingFile(file)
+                                            navController.navigate("viewer")
+                                        }
+                                    )
+                                } else if (toolId == ToolType.IMAGE_TO_PDF.id) {
+                                    JpgToPdfScreen(
+                                        viewModel = viewModel,
+                                        onBack = { navController.popBackStack() },
+                                        onOpenViewer = { file ->
+                                            viewModel.setActiveViewingFile(file)
+                                            navController.navigate("viewer")
+                                        }
+                                    )
+                                } else if (toolId == ToolType.SPLIT.id) {
+                                    SplitPdfScreen(
+                                        viewModel = viewModel,
+                                        onBack = { navController.popBackStack() },
+                                        onOpenViewer = { file ->
+                                            viewModel.setActiveViewingFile(file)
+                                            navController.navigate("viewer")
+                                        }
+                                    )
+                                } else {
+                                    val tool = ToolType.entries.find { it.id == toolId } ?: ToolType.MERGE
+                                    ToolDetailScreen(
+                                        tool = tool,
+                                        viewModel = viewModel,
+                                        onBack = { navController.popBackStack() },
+                                        onOpenViewer = { file ->
+                                            viewModel.setActiveViewingFile(file)
+                                            navController.navigate("viewer")
+                                        }
+                                    )
+                                }
                             }
 
                             composable("viewer") {

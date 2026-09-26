@@ -529,20 +529,46 @@ fun ToolDetailScreen(
                             SingleFilePickerHeader(
                                 currentFile = singlePdfFile,
                                 onPick = { singlePdfPicker.launch(arrayOf("application/pdf")) },
-                                onUseDemo = { loadSample() }
+                                onUseDemo = {
+                                    viewModel.createSampleDocument { sampleFile ->
+                                        singlePdfFile = sampleFile
+                                        onOpenViewer(sampleFile)
+                                    }
+                                }
                             )
                         }
 
                         if (singlePdfFile != null) {
                             item {
-                                Button(
-                                    onClick = { onOpenViewer(singlePdfFile!!) },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5322D)),
-                                    modifier = Modifier.fillMaxWidth().height(52.dp).testTag("btn_launch_reader")
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Icon(Icons.Default.MenuBook, contentDescription = null)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Open in PDF Reader", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            text = "Document Ready",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${singlePdfFile!!.name} (${PdfProcessor.formatFileSize(singlePdfFile!!.length())})",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                            onClick = { onOpenViewer(singlePdfFile!!) },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5322D)),
+                                            modifier = Modifier.fillMaxWidth().height(52.dp).testTag("btn_launch_reader")
+                                        ) {
+                                            Icon(Icons.Default.MenuBook, contentDescription = null)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Launch Fullscreen PDF Reader", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
                                 }
                             }
                         }

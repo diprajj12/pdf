@@ -84,9 +84,16 @@ object PdfProcessor {
         outputName: String = "Merged_${System.currentTimeMillis()}.pdf"
     ): ProcessResult = withContext(Dispatchers.IO) {
         val totalOriginalSize = pdfFiles.sumOf { it.length() }
-        val outputDir = File(context.filesDir, "ilovepdf_docs").apply { mkdirs() }
-        val outputFile = File(outputDir, outputName)
+        val outputDir = File(context.filesDir, "pdf_solution_docs").apply { mkdirs() }
+        val sanitizedName = if (outputName.endsWith(".pdf", ignoreCase = true)) outputName else "$outputName.pdf"
+        val outputFile = File(outputDir, sanitizedName)
         val document = PdfDocument()
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
 
         var globalPageNumber = 1
         try {
@@ -98,8 +105,12 @@ object PdfProcessor {
                     val width = page.width
                     val height = page.height
 
-                    // Render at high resolution for quality
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    // 2x high resolution rendering for sharp text and graphics
+                    val scaleFactor = 2f
+                    val renderWidth = (width * scaleFactor).toInt().coerceAtLeast(1)
+                    val renderHeight = (height * scaleFactor).toInt().coerceAtLeast(1)
+
+                    val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
                     val canvas = Canvas(bitmap)
                     canvas.drawColor(Color.WHITE)
                     page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
@@ -107,7 +118,8 @@ object PdfProcessor {
 
                     val pageInfo = PdfDocument.PageInfo.Builder(width, height, globalPageNumber++).create()
                     val docPage = document.startPage(pageInfo)
-                    docPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                    val destRect = Rect(0, 0, width, height)
+                    docPage.canvas.drawBitmap(bitmap, null, destRect, paint)
                     document.finishPage(docPage)
                     bitmap.recycle()
                 }
@@ -125,7 +137,7 @@ object PdfProcessor {
                 outputFile = outputFile,
                 originalSize = totalOriginalSize,
                 newSize = outputFile.length(),
-                message = "Successfully merged ${pdfFiles.size} PDFs into one document."
+                message = "Successfully combined ${pdfFiles.size} PDFs into one single file."
             )
         } catch (e: Exception) {
             document.close()
@@ -140,9 +152,16 @@ object PdfProcessor {
         outputName: String = "Split_${System.currentTimeMillis()}.pdf"
     ): ProcessResult = withContext(Dispatchers.IO) {
         val originalSize = file.length()
-        val outputDir = File(context.filesDir, "ilovepdf_docs").apply { mkdirs() }
-        val outputFile = File(outputDir, outputName)
+        val outputDir = File(context.filesDir, "pdf_solution_docs").apply { mkdirs() }
+        val sanitizedName = if (outputName.endsWith(".pdf", ignoreCase = true)) outputName else "$outputName.pdf"
+        val outputFile = File(outputDir, sanitizedName)
         val document = PdfDocument()
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
 
         try {
             val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
@@ -155,7 +174,11 @@ object PdfProcessor {
                     val width = page.width
                     val height = page.height
 
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    val scaleFactor = 2f
+                    val renderWidth = (width * scaleFactor).toInt().coerceAtLeast(1)
+                    val renderHeight = (height * scaleFactor).toInt().coerceAtLeast(1)
+
+                    val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
                     val canvas = Canvas(bitmap)
                     canvas.drawColor(Color.WHITE)
                     page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
@@ -163,7 +186,8 @@ object PdfProcessor {
 
                     val pageInfo = PdfDocument.PageInfo.Builder(width, height, pageCountOut++).create()
                     val docPage = document.startPage(pageInfo)
-                    docPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                    val destRect = Rect(0, 0, width, height)
+                    docPage.canvas.drawBitmap(bitmap, null, destRect, paint)
                     document.finishPage(docPage)
                     bitmap.recycle()
                 }
@@ -192,11 +216,18 @@ object PdfProcessor {
 
     suspend fun splitAllPages(
         context: Context,
-        file: File
+        file: File,
+        baseName: String = "Page"
     ): ProcessResult = withContext(Dispatchers.IO) {
         val originalSize = file.length()
-        val outputDir = File(context.filesDir, "ilovepdf_split_${System.currentTimeMillis()}").apply { mkdirs() }
+        val outputDir = File(context.filesDir, "pdf_solution_split_${System.currentTimeMillis()}").apply { mkdirs() }
         val outputFiles = mutableListOf<File>()
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
 
         try {
             val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
@@ -208,7 +239,11 @@ object PdfProcessor {
                 val width = page.width
                 val height = page.height
 
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val scaleFactor = 2f
+                val renderWidth = (width * scaleFactor).toInt().coerceAtLeast(1)
+                val renderHeight = (height * scaleFactor).toInt().coerceAtLeast(1)
+
+                val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
                 canvas.drawColor(Color.WHITE)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
@@ -216,11 +251,13 @@ object PdfProcessor {
 
                 val pageInfo = PdfDocument.PageInfo.Builder(width, height, 1).create()
                 val docPage = pageDoc.startPage(pageInfo)
-                docPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                val destRect = Rect(0, 0, width, height)
+                docPage.canvas.drawBitmap(bitmap, null, destRect, paint)
                 pageDoc.finishPage(docPage)
                 bitmap.recycle()
 
-                val pageFile = File(outputDir, "Page_${i + 1}.pdf")
+                val cleanBase = baseName.trim().removeSuffix(".pdf")
+                val pageFile = File(outputDir, "${cleanBase}_${i + 1}.pdf")
                 FileOutputStream(pageFile).use { fos ->
                     pageDoc.writeTo(fos)
                 }
@@ -241,6 +278,161 @@ object PdfProcessor {
             )
         } catch (e: Exception) {
             ProcessResult(success = false, message = "Split all failed: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun splitPdfByChunkSize(
+        context: Context,
+        file: File,
+        chunkSize: Int,
+        baseName: String = "Part"
+    ): ProcessResult = withContext(Dispatchers.IO) {
+        val originalSize = file.length()
+        val outputDir = File(context.filesDir, "pdf_solution_chunks_${System.currentTimeMillis()}").apply { mkdirs() }
+        val outputFiles = mutableListOf<File>()
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
+
+        try {
+            val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+            val renderer = PdfRenderer(pfd)
+            val totalPages = renderer.pageCount
+            val cleanBase = baseName.trim().removeSuffix(".pdf")
+
+            var partIndex = 1
+            for (startIdx in 0 until totalPages step chunkSize) {
+                val endIdx = (startIdx + chunkSize).coerceAtMost(totalPages)
+                val partDoc = PdfDocument()
+
+                var localPgNum = 1
+                for (p in startIdx until endIdx) {
+                    val page = renderer.openPage(p)
+                    val width = page.width
+                    val height = page.height
+
+                    val scaleFactor = 2f
+                    val renderWidth = (width * scaleFactor).toInt().coerceAtLeast(1)
+                    val renderHeight = (height * scaleFactor).toInt().coerceAtLeast(1)
+
+                    val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bitmap)
+                    canvas.drawColor(Color.WHITE)
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    page.close()
+
+                    val pageInfo = PdfDocument.PageInfo.Builder(width, height, localPgNum++).create()
+                    val docPage = partDoc.startPage(pageInfo)
+                    val destRect = Rect(0, 0, width, height)
+                    docPage.canvas.drawBitmap(bitmap, null, destRect, paint)
+                    partDoc.finishPage(docPage)
+                    bitmap.recycle()
+                }
+
+                val partFile = File(outputDir, "${cleanBase}_${partIndex}_(pages_${startIdx + 1}-${endIdx}).pdf")
+                FileOutputStream(partFile).use { fos ->
+                    partDoc.writeTo(fos)
+                }
+                partDoc.close()
+                outputFiles.add(partFile)
+                partIndex++
+            }
+
+            renderer.close()
+            pfd.close()
+
+            ProcessResult(
+                success = true,
+                outputFile = outputFiles.firstOrNull(),
+                outputFiles = outputFiles,
+                originalSize = originalSize,
+                newSize = outputFiles.sumOf { it.length() },
+                message = "Split into ${outputFiles.size} smaller PDF documents."
+            )
+        } catch (e: Exception) {
+            ProcessResult(success = false, message = "Split by chunk failed: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun splitPdfByCustomRanges(
+        context: Context,
+        file: File,
+        ranges: List<List<Int>>, // each sub-list is 0-indexed page indices for that document
+        baseName: String = "Part"
+    ): ProcessResult = withContext(Dispatchers.IO) {
+        val originalSize = file.length()
+        val outputDir = File(context.filesDir, "pdf_solution_ranges_${System.currentTimeMillis()}").apply { mkdirs() }
+        val outputFiles = mutableListOf<File>()
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
+
+        try {
+            val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+            val renderer = PdfRenderer(pfd)
+            val cleanBase = baseName.trim().removeSuffix(".pdf")
+
+            var partIndex = 1
+            for (pageIndices in ranges) {
+                if (pageIndices.isEmpty()) continue
+                val partDoc = PdfDocument()
+
+                var localPgNum = 1
+                for (p in pageIndices) {
+                    if (p in 0 until renderer.pageCount) {
+                        val page = renderer.openPage(p)
+                        val width = page.width
+                        val height = page.height
+
+                        val scaleFactor = 2f
+                        val renderWidth = (width * scaleFactor).toInt().coerceAtLeast(1)
+                        val renderHeight = (height * scaleFactor).toInt().coerceAtLeast(1)
+
+                        val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(bitmap)
+                        canvas.drawColor(Color.WHITE)
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        page.close()
+
+                        val pageInfo = PdfDocument.PageInfo.Builder(width, height, localPgNum++).create()
+                        val docPage = partDoc.startPage(pageInfo)
+                        val destRect = Rect(0, 0, width, height)
+                        docPage.canvas.drawBitmap(bitmap, null, destRect, paint)
+                        partDoc.finishPage(docPage)
+                        bitmap.recycle()
+                    }
+                }
+
+                val startPage = (pageIndices.firstOrNull() ?: 0) + 1
+                val endPage = (pageIndices.lastOrNull() ?: 0) + 1
+                val partFile = File(outputDir, "${cleanBase}_${partIndex}_(pages_${startPage}-${endPage}).pdf")
+                FileOutputStream(partFile).use { fos ->
+                    partDoc.writeTo(fos)
+                }
+                partDoc.close()
+                outputFiles.add(partFile)
+                partIndex++
+            }
+
+            renderer.close()
+            pfd.close()
+
+            ProcessResult(
+                success = true,
+                outputFile = outputFiles.firstOrNull(),
+                outputFiles = outputFiles,
+                originalSize = originalSize,
+                newSize = outputFiles.sumOf { it.length() },
+                message = "Split into ${outputFiles.size} smaller PDF documents."
+            )
+        } catch (e: Exception) {
+            ProcessResult(success = false, message = "Split by ranges failed: ${e.localizedMessage}")
         }
     }
 
@@ -317,22 +509,68 @@ object PdfProcessor {
         fitMode: ImageFitMode = ImageFitMode.FIT_PAGE,
         margin: Float = 20f
     ): ProcessResult = withContext(Dispatchers.IO) {
-        val outputDir = File(context.filesDir, "pdfsolution_docs").apply { mkdirs() }
-        val outputFile = File(outputDir, outputName)
+        val outputDir = File(context.filesDir, "pdf_solution_docs").apply { mkdirs() }
+        val sanitizedName = if (outputName.endsWith(".pdf", ignoreCase = true)) outputName else "$outputName.pdf"
+        val outputFile = File(outputDir, sanitizedName)
         val document = PdfDocument()
 
-        val pageWidth = if (orientation == PageOrientation.PORTRAIT) 595 else 842
-        val pageHeight = if (orientation == PageOrientation.PORTRAIT) 842 else 595
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
+
+        var totalInputSize = 0L
 
         try {
             var pageIndex = 1
             for (uri in imageUris) {
+                // Calculate input file size if possible
+                try {
+                    context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { afd ->
+                        totalInputSize += afd.length
+                    }
+                } catch (e: Exception) {
+                    // Ignore
+                }
+
+                // Read EXIF orientation
+                val rotationDegrees = try {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        val exif = android.media.ExifInterface(stream)
+                        when (exif.getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, android.media.ExifInterface.ORIENTATION_NORMAL)) {
+                            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                            android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                            else -> 0
+                        }
+                    } ?: 0
+                } catch (e: Exception) {
+                    0
+                }
+
                 val input = context.contentResolver.openInputStream(uri) ?: continue
-                val options = BitmapFactory.Options().apply { inJustDecodeBounds = false }
-                val bitmap = BitmapFactory.decodeStream(input, null, options)
+                val rawBitmap = BitmapFactory.decodeStream(input)
                 input.close()
 
-                if (bitmap != null) {
+                if (rawBitmap != null) {
+                    val bitmap = if (rotationDegrees != 0) {
+                        val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+                        val rotated = Bitmap.createBitmap(rawBitmap, 0, 0, rawBitmap.width, rawBitmap.height, matrix, true)
+                        rawBitmap.recycle()
+                        rotated
+                    } else {
+                        rawBitmap
+                    }
+
+                    val (pageWidth, pageHeight) = when (orientation) {
+                        PageOrientation.PORTRAIT -> Pair(595, 842)
+                        PageOrientation.LANDSCAPE -> Pair(842, 595)
+                        PageOrientation.AUTO -> {
+                            if (bitmap.width > bitmap.height) Pair(842, 595) else Pair(595, 842)
+                        }
+                    }
+
                     val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageIndex++).create()
                     val docPage = document.startPage(pageInfo)
                     val canvas = docPage.canvas
@@ -344,9 +582,9 @@ object PdfProcessor {
                     val availableHeight = (pageHeight - (actualMargin * 2)).coerceAtLeast(10f)
 
                     val scale = if (fitMode == ImageFitMode.FILL_PAGE) {
-                        maxOf(availableWidth / bitmap.width, availableHeight / bitmap.height)
+                        maxOf(availableWidth / bitmap.width.toFloat(), availableHeight / bitmap.height.toFloat())
                     } else {
-                        minOf(availableWidth / bitmap.width, availableHeight / bitmap.height)
+                        minOf(availableWidth / bitmap.width.toFloat(), availableHeight / bitmap.height.toFloat())
                     }
 
                     val finalWidth = bitmap.width * scale
@@ -356,7 +594,7 @@ object PdfProcessor {
                     val top = actualMargin + (availableHeight - finalHeight) / 2f
 
                     val destRect = RectF(left, top, left + finalWidth, top + finalHeight)
-                    canvas.drawBitmap(bitmap, null, destRect, Paint(Paint.FILTER_BITMAP_FLAG))
+                    canvas.drawBitmap(bitmap, null, destRect, paint)
 
                     document.finishPage(docPage)
                     bitmap.recycle()
@@ -371,7 +609,7 @@ object PdfProcessor {
             ProcessResult(
                 success = true,
                 outputFile = outputFile,
-                originalSize = 0,
+                originalSize = totalInputSize,
                 newSize = outputFile.length(),
                 message = "Created PDF from ${imageUris.size} images."
             )
