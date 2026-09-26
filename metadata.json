@@ -1,0 +1,7 @@
+{
+  "name": "Pdf solution",
+  "description": "Complete PDF tools suite to merge, split, compress PDF & JPG, convert JPG/JPEG to PDF, organize pages, watermark, and read PDF files.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

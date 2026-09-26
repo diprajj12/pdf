@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Document Body with folded top-right corner inside 66dp safe zone (21..87) -->
+    <!-- Document shadow -->
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M33,26 L65,26 L79,40 L79,84 C79,86.2 77.2,88 75,88 L33,88 C30.8,88 29,86.2 29,84 L29,30 C29,27.8 30.8,26 33,26 Z" />
+
+    <!-- Document White Card -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,24 L63,24 L76,37 L76,82 C76,84.2 74.2,86 72,86 L32,86 C29.8,86 28,84.2 28,82 L28,28 C28,25.8 29.8,24 32,24 Z" />
+
+    <!-- Folded corner flap -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M63,24 L63,37 L76,37 Z" />
+    <path
+        android:fillColor="#CBD5E1"
+        android:pathData="M63,37 L76,37 L63,24 Z" />
+
+    <!-- Red Heart Emblem (iLovePDF signature heart) -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M52,47 C52,43.5 48.5,41 45.5,41 C42.5,41 40,43.5 40,46.5 C40,51 52,60 52,60 C52,60 64,51 64,46.5 C64,43.5 61.5,41 58.5,41 C55.5,41 52,43.5 52,47 Z" />
+
+    <!-- Red PDF Tag Banner across bottom of sheet -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M34,66 L70,66 C71.1,66 72,66.9 72,68 L72,78 C72,79.1 71.1,80 70,80 L34,80 C32.9,80 32,79.1 32,78 L32,68 C32,66.9 32.9,66 34,66 Z" />
+
+    <!-- PDF Text Representation (clean geometric cutouts for P D F) -->
+    <!-- P -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M37,69 L41.5,69 C42.6,69 43.5,69.7 43.5,70.7 C43.5,71.7 42.6,72.4 41.5,72.4 L38.5,72.4 L38.5,77 L37,77 Z M38.5,70.2 L38.5,71.2 L41.2,71.2 C41.7,71.2 42,71 42,70.7 C42,70.4 41.7,70.2 41.2,70.2 Z" />
+
+    <!-- D -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,69 L49.5,69 C51.4,69 53,70.5 53,73 C53,75.5 51.4,77 49.5,77 L46,77 Z M47.5,70.4 L47.5,75.6 L49.3,75.6 C50.5,75.6 51.5,74.5 51.5,73 C51.5,71.5 50.5,70.4 49.3,70.4 Z" />
+
+    <!-- F -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55.5,69 L61,69 L61,70.4 L57,70.4 L57,72.3 L60.5,72.3 L60.5,73.7 L57,73.7 L57,77 L55.5,77 Z" />
+</vector>
